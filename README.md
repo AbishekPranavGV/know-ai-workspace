@@ -1,5 +1,6 @@
 # ⚡ KNOW AKS — Universal Digital Workspace & Productivity Suite
 
+[![Production Live](https://img.shields.io/badge/Production-Live%20on%20Vercel-success?style=for-the-badge&logo=vercel)](https://know-ai-workspace.vercel.app/dashboard)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAbishekPranavGV%2Fknow-ai-workspace)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16_Turbopack-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)](https://react.dev/)
@@ -9,6 +10,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 > **KNOW AKS is an all-in-one universal digital productivity, communication, learning, and collaboration workspace. Built for students, professionals, freelancers, entrepreneurs, educators, and teams — with essential features permanently free.**
+
+🌐 **Live Cloud Production Dashboard:** [https://know-ai-workspace.vercel.app/dashboard](https://know-ai-workspace.vercel.app/dashboard)
 
 ---
 
