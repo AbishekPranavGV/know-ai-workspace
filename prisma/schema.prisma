@@ -1,0 +1,397 @@
+// KNOW AKS — Prisma Schema v1.1
+// Foundation & Security, Workspace, Notes, Tasks, Chat, Security, Learning
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─────────────────────────────────────────────
+// USER & AUTH
+// ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  name          String
+  avatarUrl     String?
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions            Session[]
+  mfaConfig           MFAConfig?
+  workspaceMemberships WorkspaceMembership[]
+  notes               Note[]
+  tasks               Task[]
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  accounts            Account[]
+  messages            Message[]
+  flashcards          Flashcard[]
+  goals               Goal[]
+  calendarEvents      CalendarEvent[]
+  fileAssets          FileAsset[]
+  integrations        Integration[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String    @id @default(cuid())
+  userId       String
+  sessionToken String    @unique
+  deviceInfo   String?
+  ipAddress    String?
+  location     String?   @default("Localhost")
+  lastActive   DateTime  @default(now())
+  expiresAt    DateTime
+  revoked      Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model MFAConfig {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  secret      String   // TOTP secret
+  backupCodes String   @default("[]") // JSON string of hashed backup codes
+  enabled     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mfa_configs")
+}
+
+// ─────────────────────────────────────────────
+// WORKSPACE
+// ─────────────────────────────────────────────
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members        WorkspaceMembership[]
+  notes          Note[]
+  tasks          Task[]
+  channels       Channel[]
+  goals          Goal[]
+  calendarEvents CalendarEvent[]
+  fileAssets     FileAsset[]
+  integrations   Integration[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMembership {
+  id          String   @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        String   @default("MEMBER") // OWNER, ADMIN, MEMBER, GUEST
+  joinedAt    DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@map("workspace_memberships")
+}
+
+// ─────────────────────────────────────────────
+// NOTES
+// ─────────────────────────────────────────────
+
+model Note {
+  id          String    @id @default(cuid())
+  workspaceId String
+  authorId    String
+  title       String    @default("Untitled Note")
+  content     String    @default("")
+  wordCount   Int       @default(0)
+  color       String    @default("bg-indigo-500")
+  pinned      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, authorId])
+  @@index([deletedAt])
+  @@map("notes")
+}
+
+// ─────────────────────────────────────────────
+// TASKS
+// ─────────────────────────────────────────────
+
+model Task {
+  id          String    @id @default(cuid())
+  workspaceId String
+  assigneeId  String?
+  title       String
+  description String?
+  status      String    @default("TODO") // TODO, IN_PROGRESS, DONE, CANCELLED
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  dueDate     String?
+  labels      String    @default("[]") // JSON string of labels
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assignee  User?     @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+  @@index([assigneeId])
+  @@map("tasks")
+}
+
+// ─────────────────────────────────────────────
+// CHAT
+// ─────────────────────────────────────────────
+
+model Channel {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+  isPrivate   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@unique([workspaceId, name])
+  @@map("channels")
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  channelId  String?
+  authorId   String
+  authorName String
+  avatar     String   @default("U")
+  role       String?
+  content    String
+  attachment String?  // JSON string: { name, size, type }
+  reactions  String   @default("[]") // JSON string: [{ emoji, count, userReacted }]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  channel Channel? @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author  User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt])
+  @@map("messages")
+}
+
+// ─────────────────────────────────────────────
+// LEARNING / STUDY HUB
+// ─────────────────────────────────────────────
+
+model Flashcard {
+  id         String   @id @default(cuid())
+  userId     String
+  deck       String
+  question   String
+  answer     String
+  hint       String?
+  mastered   Boolean  @default(false)
+  repetition Int      @default(0)
+  interval   Int      @default(1)
+  easeFactor Float    @default(2.5)
+  nextReview DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deck])
+  @@index([userId, nextReview])
+  @@map("flashcards")
+}
+
+// ─────────────────────────────────────────────
+// SECURITY & AUDIT
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id                     String   @id @default(cuid())
+  userId                 String?
+  eventType              String   // SEC-001, SEC-002, etc.
+  timestamp              DateTime @default(now())
+  resourceId             String?
+  outcome                String   // SUCCESS, FAILED, SUSPICIOUS, BLOCKED
+  sessionId              String?
+  deviceInfo             String?
+  ipAddress              String?
+  location               String?  @default("Localhost")
+  securityClassification String   @default("INFO") // INFO, WARNING, HIGH, CRITICAL
+  metadata               String?  // JSON string
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, timestamp])
+  @@index([eventType])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String   // success, warning, info
+  title             String
+  body              String
+  read              Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  relatedResourceId String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────
+// GOALS & MILESTONES (Phase 3)
+// ─────────────────────────────────────────────
+
+model Goal {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  title       String
+  description String?
+  category    String   @default("Academic") // Academic, Career, Personal, Project
+  targetDate  String?
+  progress    Int      @default(0) // 0 to 100
+  status      String   @default("ACTIVE") // ACTIVE, COMPLETED, ON_HOLD
+  keyResults  String   @default("[]") // JSON string of [{ id, title, completed }]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@index([userId])
+  @@map("goals")
+}
+
+// ─────────────────────────────────────────────
+// CALENDAR & GOOGLE WORKSPACE EVENTS (Phase 2)
+// ─────────────────────────────────────────────
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  title       String
+  description String?
+  date        String   // YYYY-MM-DD
+  time        String?  // e.g. "10:00 AM - 11:30 AM"
+  category    String   @default("Study") // Study, Meeting, Deadline, Personal
+  meetUrl     String?  // Google Meet URL
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, date])
+  @@index([userId])
+  @@map("calendar_events")
+}
+
+// ─────────────────────────────────────────────
+// FILE & ASSET STORAGE (Phase 4)
+// ─────────────────────────────────────────────
+
+model FileAsset {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  name        String
+  size        String   // e.g. "2.4 MB"
+  type        String   // pdf, doc, image, code, archive
+  url         String?  // local file path or cloud URL
+  source      String   @default("LOCAL") // LOCAL, GOOGLE_DRIVE
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, type])
+  @@index([userId])
+  @@map("file_assets")
+}
+
+// ─────────────────────────────────────────────
+// INTEGRATIONS & WEBHOOKS (Phase 4)
+// ─────────────────────────────────────────────
+
+model Integration {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  provider    String    // GOOGLE_DRIVE, GOOGLE_CALENDAR, GITHUB, WEBHOOK, SLACK
+  name        String
+  status      String    @default("CONNECTED") // CONNECTED, DISCONNECTED, PENDING
+  config      String    @default("{}") // JSON string of settings / webhook URL
+  lastSyncAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, provider])
+  @@map("integrations")
+}
