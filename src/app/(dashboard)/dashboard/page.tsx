@@ -173,9 +173,31 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 animate-fade-in">
+      {/* Performance & Status Banner */}
+      <div className="flex items-center justify-between p-3 sm:p-4 rounded-2xl glass-luxury border border-indigo-200/60 dark:border-white/10 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse-glow" />
+          <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
+            KNOW AKS Hyper-Speed Cloud Mode Active
+          </span>
+          <span className="hidden sm:inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 font-bold">
+            0ms UI Lag
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/chat"
+            className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+          >
+            <span>Open Chat Stream</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">
             {greeting}, {userName} 👋
