@@ -265,6 +265,53 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* 28-Day Deep Focus & Consistency Heatmap */}
+      <div className="p-6 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-indigo-500" />
+              <span>28-Day Study &amp; Execution Heatmap</span>
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Daily focus density and consistency record</p>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <span>Less</span>
+            <div className="flex gap-1">
+              <div className="w-3 h-3 rounded-xs bg-gray-100 dark:bg-gray-800" />
+              <div className="w-3 h-3 rounded-xs bg-indigo-200 dark:bg-indigo-950" />
+              <div className="w-3 h-3 rounded-xs bg-indigo-400 dark:bg-indigo-700" />
+              <div className="w-3 h-3 rounded-xs bg-indigo-600 dark:bg-indigo-500" />
+            </div>
+            <span>More</span>
+          </div>
+        </div>
+
+        {/* Heatmap Grid */}
+        <div className="grid grid-cols-7 sm:grid-cols-14 md:grid-cols-28 gap-2 pt-2">
+          {Array.from({ length: 28 }).map((_, i) => {
+            const intensity = (i * 3 + 2) % 4
+            const colors = [
+              "bg-gray-100 dark:bg-gray-800/80 border border-transparent",
+              "bg-indigo-100 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-900/50",
+              "bg-indigo-300 dark:bg-indigo-700/80 border border-indigo-400 dark:border-indigo-600",
+              "bg-indigo-600 dark:bg-indigo-500 border border-indigo-700 dark:border-indigo-400 shadow-xs",
+            ]
+            return (
+              <div
+                key={i}
+                className={`h-9 rounded-xl flex items-center justify-center text-[10px] font-bold transition-all hover:scale-110 cursor-pointer ${colors[intensity]}`}
+                title={`Day ${i + 1}: ${intensity * 45 + 30} mins focus logged`}
+              >
+                <span className={intensity >= 2 ? "text-white" : "text-gray-500 dark:text-gray-400"}>
+                  {i + 1}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }

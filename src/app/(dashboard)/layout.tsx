@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FileText, CheckSquare, Calendar, Target,
   MessageSquare, BookOpen, Shield, Settings, Zap, LogOut, Bell,
   Sun, Moon, Menu, X, ChevronDown, Search, User, Check, Plus, CheckCheck,
-  BarChart3, Folder, Users, Cpu
+  BarChart3, Folder, Users, Cpu, Laptop, Download
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { CommandPalette } from "@/components/command-palette"
@@ -58,6 +58,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [wsMenuOpen, setWsMenuOpen] = useState(false)
   const [activeWs, setActiveWs] = useState(WORKSPACES[0])
   const [cmdOpen, setCmdOpen] = useState(false)
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [showInstallModal, setShowInstallModal] = useState(false)
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener("beforeinstallprompt", handler)
+    return () => window.removeEventListener("beforeinstallprompt", handler)
+  }, [])
+
+  const handleInstallClick = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+      deferredPrompt.userChoice.then(() => setDeferredPrompt(null))
+    } else {
+      setShowInstallModal(true)
+    }
+  }
 
   // Live Notifications
   const [notifications, setNotifications] = useState([
@@ -200,6 +220,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         })}
       </nav>
 
+      {/* Desktop Software prompt in sidebar */}
+      <div className="mx-3 my-2 p-3 rounded-2xl bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-transparent border border-indigo-200/50 dark:border-indigo-500/20 shadow-xs">
+        <div className="flex items-center gap-2 mb-1">
+          <Laptop className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+          <span className="text-xs font-bold text-gray-900 dark:text-white">Desktop Software</span>
+        </div>
+        <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-2 leading-tight">Run in standalone window with zero browser tabs.</p>
+        <button
+          onClick={handleInstallClick}
+          className="w-full py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition-all shadow-xs flex items-center justify-center gap-1.5"
+        >
+          <Download className="w-3 h-3" />
+          <span>Install Software</span>
+        </button>
+      </div>
+
       {/* User profile footer */}
       <div className="p-3 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
         <div
@@ -268,6 +304,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Topbar Actions */}
           <div className="flex items-center gap-1.5 ml-auto">
+            <button
+              onClick={handleInstallClick}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-indigo-950/40 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shadow-xs"
+              title="Run as Desktop App"
+            >
+              <Laptop className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>Desktop App</span>
+            </button>
+
             <ThemeToggle />
 
             {/* Notifications Dropdown */}
@@ -371,6 +416,51 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+
+      {/* Desktop App Installation Modal */}
+      {showInstallModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowInstallModal(false)} />
+          <div className="relative w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl z-10 animate-scale-up">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                  <Laptop className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white">Run as Desktop Software</h3>
+                  <p className="text-xs text-gray-400">Windows · macOS · Linux</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowInstallModal(false)}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
+              <div className="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
+                <p className="font-bold text-indigo-900 dark:text-indigo-200 mb-1">Option 1: Browser 1-Click Install (PWA)</p>
+                <p>Click the <strong>Install Icon</strong> in your Chrome/Edge address bar (top right next to the URL) to install KNOW AKS to your Windows taskbar or Mac Dock.</p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700">
+                <p className="font-bold text-gray-900 dark:text-white mb-1">Option 2: Native Windows Executable</p>
+                <p>Double-click <code className="px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 font-mono">know-aks-desktop.bat</code> in the project directory to launch in borderless app window mode.</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowInstallModal(false)}
+              className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all shadow-md shadow-indigo-500/20"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

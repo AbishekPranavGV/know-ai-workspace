@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
+    "desktop": "powershell -ExecutionPolicy Bypass -File ./know-aks-desktop.ps1",
     "lint": "eslint"
   },
   "dependencies": {
